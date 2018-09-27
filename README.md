@@ -9,7 +9,7 @@ https://www.e-consystems.com/3d-usb-stereo-camera-with-nvidia-accelerated-sdk.as
 ## Getting started
 
 1. Download the latest version of the TaraXL SDK at https://developer.e-consystems.com
-2. Install the TaraXL SDK on you NVIDIA TX2 device or in Linux x86 PC(with NVIDIA Card).
+2. Install the TaraXL SDK on your NVIDIA TX2 device or in Linux x86 PC(with NVIDIA Card).
 
 
 ## Prerequisites
@@ -54,7 +54,7 @@ http://wiki.ros.org/taraxl-ros-package
      brightness : Controls brightness of the image (1-7)
      exposure : Manual exposure value (10-1000000)
      accuracy : Accuracy of the disparity image.
-     auto_exposure : Enable auto exposure 
+     autoExposure : Enable auto exposure 
 
 ## Test Package
 
