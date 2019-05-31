@@ -5,17 +5,20 @@ The TaraXL - See3CAM_StereoA is a UVC compliant USB 3.0 SuperSpeed Stereo vision
 For More Information please visit:
 https://www.e-consystems.com/3d-usb-stereo-camera-with-nvidia-accelerated-sdk.asp
 
+STEEReoCAM™ is a 2MP 3D MIPI Stereo camera for NVIDIA® Jetson AGX Xavier™/TX2 developer kit with improved accuracy and depth range. This MIPI Stereo camera is based on 1/2.9" OV2311 global shutter CMOS sensor from OmniVision. STEEReoCAM™ is bundled with a proprietary CUDA® accelerated Stereo SDK that runs on the GPU of NVIDIA® Tegra processors. It provides 3D depth mapping at ((2*1600) x 1300) resolution at 22 fps. 
+
+For More Information please visit:
+https://www.e-consystems.com/nvidia-cameras/jetson-agx-xavier-cameras/stereo-camera.asp
 
 ## Getting started
 
 1. Download the latest version of the TaraXL SDK at https://developer.e-consystems.com
-2. Install the TaraXL SDK on your NVIDIA TX2 device or in Linux x86 PC(with NVIDIA Card).
-
+2. Install the TaraXL SDK on your NVIDIA TX2/Xavier device or in Linux x86 PC(with NVIDIA Card).
 
 ## Prerequisites
 
 - Ubuntu 16.04
-- [TARAXL SDK 1.0.0](https://developer.e-consystems.com) and its dependency [CUDA](https://developer.nvidia.com/cuda-downloads)
+- [TARAXL SDK 3.0.1](https://developer.e-consystems.com) and its dependency [CUDA](https://developer.nvidia.com/cuda-downloads)
 - [ROS Kinetic](http://wiki.ros.org/kinetic/Installation/Ubuntu)
 
 ## Build the program
@@ -48,13 +51,26 @@ http://wiki.ros.org/taraxl-ros-package
     /taraxl/right/image_rect - Rectified right image
     /taraxl/stereo/disparity/image - Disparity image
     /taraxl/depth/image - Depth image 
+    /taraxl/stereo/pointcloud - pointcloud
+    /taraxl/imu/data_raw - Raw IMU data - linear acceleration and angular velocity
+    /taraxl/imu/inclination - IMU inclination data w.r.t 3 axes x,y and z 
 
-## Dynamic Reconfiguration Settings
+## Dynamic Reconfiguration Settings for TaraXL
 
      brightness : Controls brightness of the image (1-7)
      exposure : Manual exposure value (10-1000000)
-     accuracy : Accuracy of the disparity image.
+     accuracy : Accuracy of the disparity image (0 - HIGH FRAME RATE, 1 - HIGH ACCURACY, 2 - ULTRA ACCURACY) 
      autoExposure : Enable auto exposure 
+     pointcloudQuality : Quality of pointcloud(1 - HIGHEST, 2 - MEDIUM, 3 - STANDARD) 
+
+## Dynamic Reconfiguration Settings for STEEREoCam
+
+     brightness : Controls brightness of the image (1-10 - Works only when auto exposure is enabled) 
+     exposure : Manual exposure value (1-7500)
+     accuracy : Accuracy of the disparity image (0 - HIGH FRAME RATE, 1 - HIGH ACCURACY, 2 - ULTRA ACCURACY) 
+     autoExposure : Enable auto exposure 
+     gain : Controls the gain of the camera(1-240) 
+     pointcloudQuality : Quality of pointcloud(1 - HIGHEST, 2 - MEDIUM, 3 - STANDARD) 
 
 ## Test Package
 
@@ -62,10 +78,28 @@ Open a terminal and enter the following command :
 
      roslaunch taraxl_ros_package taraxl.launch
 
-To visualize TaraXL topics, open a terminal and enter the following command:
+To visualize TaraXL/STEEReoCAM image topics
 
-     rqt_image_view
+	rqt_image_view
+
+To visualize TaraXL/STEEReoCAM dispariy image topic
+
+	rosrun image_view disparity_view image:=/taraxl/stereo/disparity/image
+
+To visualize TaraXL/STEEReoCAM pointcloud topic
+
+	rosrun rviz rviz
+
+To view imu data
+
+	rostopic echo /taraxl/imu/data_raw
+	rostopic echo /taraxl/imu/inclination
+
+Dynamic reconfiguration
+
+	rosrun rqt_reconfigure rqt_reconfigure
 
 ## Support
 
-If you need assistance with the TaraXL, visit at https://www.e-consystems.com/Request-form.asp?paper=see3cam_stereoa or contact us at techsupport@e-consystems.com
+If you need assistance with the TaraXL/STEEREoCam, visit at https://www.e-consystems.com/create-ticket.asp or contact us at techsupport@e-consystems.com
+

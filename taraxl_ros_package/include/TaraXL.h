@@ -13,12 +13,10 @@
 //
 ///////////////////////////////////////////////////////////////////////////
 /**********************************************************************
-TaraXL.h : All the implementations of camera enumeration
+TaraXL.h : the implementations of camera enumeration
 **********************************************************************/
-
-#ifndef _TARAXL_H
-#define _TARAXL_H
-
+#ifndef TARAXL_H_
+#define TARAXL_H_
 
 #include "TaraXLCam.h"
 

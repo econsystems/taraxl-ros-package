@@ -1,5 +1,5 @@
 <launch>
-	
+
 <node pkg="taraxl_ros_package" name="taraxl_ros_package" type="taraxl_ros_package" ns="taraxl" output="screen" />
 
 <group ns="taraxl/left/image_rect" >
@@ -25,6 +25,8 @@
     - 'image_transport/compressed'
   </rosparam>
 </group>
+
+<node name="camera_transform" pkg="tf" type="static_transform_publisher" args="0 0 0 -1.57 0 -1.57 /map /taraxl 100" />
 
 
 </launch>

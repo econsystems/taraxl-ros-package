@@ -32,7 +32,7 @@ namespace TaraXLSDK
     TARAXL_STATUS_CODE setAccuracy(ACCURACY_MODE mode);
 
     //Gets the disparity and depth maps.
-    TARAXL_STATUS_CODE getMap(cv::Mat &leftImage, cv::Mat &rightImage, cv::Mat &disparityMap, bool fillDisparityMap, cv::Mat &depthMap, bool fillDepthMap);
+    TARAXL_STATUS_CODE getMap(cv::Mat &leftImage, cv::Mat &rightImage, cv::Mat &disparityMap, bool fillDisparityMap, cv::Mat &depthMap, bool fillDepthMap, TARAXL_FILTER_TYPE filter=TARAXL_DEFAULT_FILTER);
   };
 }
 #endif  /* TARAXL_DEPTH_H_ */

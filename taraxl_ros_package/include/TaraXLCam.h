@@ -25,6 +25,7 @@ TaraXLCam.h :  TaraXLCam.h contains APIs about
 #include <vector>
 #include "opencv2/core/core.hpp"
 
+
 namespace TaraXLSDK
 {
   struct Resolution
@@ -67,8 +68,14 @@ namespace TaraXLSDK
         //Sets the Brightness Val of the connected camera
         TARAXL_STATUS_CODE setBrightness(int brightnessVal);
 
+	//Sets the Gain Val of the connected camera
+        TARAXL_STATUS_CODE setGain(int gainVal);
+
         //Gets the brightness value of the connected camera
         TARAXL_STATUS_CODE getBrightness(int &brightnessVal);
+
+	//Gets the gain value of the connected camera
+        TARAXL_STATUS_CODE getGain(int &gainVal);
 
         //Gets the Q matrix of the connected camera
         TARAXL_STATUS_CODE getQMatrix(cv::Mat &Q);
@@ -76,9 +83,14 @@ namespace TaraXLSDK
         //Gets the friendly Name of the camera.
         TARAXL_STATUS_CODE getFriendlyName(std::string &name);
 
+	//Gets the unique serial number of the connected camera
+        TARAXL_STATUS_CODE getCameraUniqueId(std::string &uniqueId);
+
     private:
 
         friend class TaraXL;
+      	friend class TaraXLPoseTracking;
+      	friend class TaraXLDepth;
         int exposure;
         double brightness;
         cv::Mat Q;
@@ -87,6 +99,8 @@ namespace TaraXLSDK
         std::string busInfo;
         Resolution selectedResolution;
         int deviceId;
+        int counterIter;
+        TARAXL_STATUS_CODE grabFrame(cv::cuda::GpuMat &leftframe, cv::cuda::GpuMat &rightframe, bool fillDisparityMap,ACCURACY_MODE mode);
   };
   typedef std::vector<TaraXLCam> TaraXLCamList;
 }
