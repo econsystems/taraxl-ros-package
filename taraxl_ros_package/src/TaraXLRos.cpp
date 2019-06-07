@@ -355,7 +355,7 @@ void taraxlros::getImages()
 			if (pointCloudSuber > 0)
 			{
 					status = taraxl3d->getPoints (currentCloud); //SDK function to obtain Point Cloud
-					currentCloud->header.frame_id = "taraxl";
+					currentCloud->header.frame_id = "taraxl_left";
 					pcl_conversions::toPCL(ros::Time::now(), currentCloud->header.stamp);
 
 					pubPointCloud.publish(currentCloud); //Publish point cloud
