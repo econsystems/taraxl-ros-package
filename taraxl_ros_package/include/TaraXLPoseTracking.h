@@ -22,12 +22,14 @@ TaraXLPoseTracking.h : Pose tracking APIs for IMUs
 
 namespace TaraXLSDK
 {
+    class TaraXLPoseTrackingImpl;
 
     //Struct that contains the IMU data.
     struct TaraXLIMUData
     {
         Vector3 angularVelocity;
         Vector3 linearAcceleration;
+	Vector3 inclination;
         Vector3 getInclination();
         TaraXLIMUData();
     };
@@ -35,18 +37,20 @@ namespace TaraXLSDK
 
     class TaraXLPoseTracking
     {
-    public:
-        TaraXLPoseTracking(TaraXLCam &camera);
-        ~TaraXLPoseTracking();
+        public:
+            TaraXLPoseTracking(TaraXLCam &camera);
+            ~TaraXLPoseTracking();
 
-        //Sets the output frequency
-        TARAXL_STATUS_CODE setIMUOutputFrequency(TARAXL_IMU_OUTPUT_FREQUENCY frequency);
+            //Sets the output frequency
+            TARAXL_STATUS_CODE setIMUOutputFrequency(TARAXL_IMU_OUTPUT_FREQUENCY frequency);
 
-        //Gets the output frequency
-        TARAXL_STATUS_CODE getIMUOutputFrequency(TARAXL_IMU_OUTPUT_FREQUENCY &frequency);
+            //Gets the output frequency
+            TARAXL_STATUS_CODE getIMUOutputFrequency(TARAXL_IMU_OUTPUT_FREQUENCY &frequency);
 
-        //Gets the IMU data.
-        TARAXL_STATUS_CODE getIMUData(TaraXLIMUData &data);
+            //Gets the IMU data.
+            TARAXL_STATUS_CODE getIMUData(TaraXLIMUData &data);
+        private:
+            std::shared_ptr<TaraXLPoseTrackingImpl> taraXLPoseTrackingImpl;
     };
 }
 #endif  /* TARAXL_POSE_TRACKING_H_ */

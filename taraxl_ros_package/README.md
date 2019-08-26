@@ -17,9 +17,10 @@ https://www.e-consystems.com/nvidia-cameras/jetson-agx-xavier-cameras/stereo-cam
 
 ## Prerequisites
 
-- Ubuntu 16.04
-- [TARAXL SDK 3.0.1](https://developer.e-consystems.com) and its dependency [CUDA](https://developer.nvidia.com/cuda-downloads)
+- Ubuntu 16.04/18.04
+- [TARAXL SDK 3.1.1](https://developer.e-consystems.com) and its dependency [CUDA](https://developer.nvidia.com/cuda-downloads)
 - [ROS Kinetic](http://wiki.ros.org/kinetic/Installation/Ubuntu)
+- [ROS Melodic](http://wiki.ros.org/melodic/Installation/Ubuntu)
 
 ## Build the program
 

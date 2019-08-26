@@ -26,10 +26,12 @@ namespace TaraXLSDK
 
     typedef pcl::PointCloud<pcl::PointXYZRGB> Points;
 
+    class TaraXLPointcloudImpl;
     class TaraXLPointcloud
     {
     public:
         TaraXLPointcloud(TaraXLCam &camera);
+	~TaraXLPointcloud();
 
         //Sets the quality of the pointcloud that is to be rendered.
         TARAXL_STATUS_CODE setPointcloudQuality(TARAXL_POINTCLOUD_QUALITY pointcloudQuality);
@@ -39,7 +41,10 @@ namespace TaraXLSDK
 
         //Gets the pointcloud in the specified format.
         TARAXL_STATUS_CODE getPoints(Points::Ptr currentCloud);
+    
+    private:
 
+    	std::shared_ptr<TaraXLPointcloudImpl> taraXLPointcloudImpl;
     };
 }
 #endif  /* TARAXL_POINTCLOUD_H_ */

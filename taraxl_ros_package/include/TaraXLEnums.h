@@ -20,7 +20,6 @@ TaraXLEnums.h :  TaraXLEnums contains descriptions about all
 #define TARAXL_ENUMS_H_
 
 #include <opencv2/highgui/highgui.hpp>
-#include <iostream>
 
 namespace TaraXLSDK
 {
@@ -74,7 +73,8 @@ namespace TaraXLSDK
     GAIN_SETTING_FAILED = 314,
     BRIGHTNESS_GETTING_FAILED = 315,
     CALIBRATION_DATA_NOT_FOUND = 316,
-    CALIBRATION_DATA_CORRUPTED = 317
+    CALIBRATION_DATA_CORRUPTED = 317,
+    GAIN_GETTING_FAILED = 318
   };
 
   /*

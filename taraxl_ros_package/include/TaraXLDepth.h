@@ -22,6 +22,7 @@ TaraXLDepth.h :  Contains the depth and disparity related APIs
 
 namespace TaraXLSDK
 {
+  class TaraXLDepthImpl;
   class TaraXLDepth
   {
   public:
@@ -33,6 +34,10 @@ namespace TaraXLSDK
 
     //Gets the disparity and depth maps.
     TARAXL_STATUS_CODE getMap(cv::Mat &leftImage, cv::Mat &rightImage, cv::Mat &disparityMap, bool fillDisparityMap, cv::Mat &depthMap, bool fillDepthMap, TARAXL_FILTER_TYPE filter=TARAXL_DEFAULT_FILTER);
+
+  private:
+    friend class TaraXLPointcloud;
+    std::shared_ptr<TaraXLDepthImpl> taraXLDepthImpl;
   };
 }
 #endif  /* TARAXL_DEPTH_H_ */

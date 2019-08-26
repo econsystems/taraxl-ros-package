@@ -24,7 +24,8 @@ TaraXLCam.h :  TaraXLCam.h contains APIs about
 #include "TaraXLEnums.h"
 #include <vector>
 #include "opencv2/core/core.hpp"
-
+#include <memory>
+#define TARAXL_SDK_VERSION "3.1.1"
 
 namespace TaraXLSDK
 {
@@ -33,8 +34,13 @@ namespace TaraXLSDK
       int width;
       int height;
   };
+  struct CalibrationParams
+  {
+      cv::Mat cameraMatrix;
+      cv::Mat distortionMatrix;
+  };
   typedef std::vector<Resolution> ResolutionList;
-
+  class TaraXLCamImpl;
   class TaraXLCam
   {
   public:
@@ -86,21 +92,23 @@ namespace TaraXLSDK
 	//Gets the unique serial number of the connected camera
         TARAXL_STATUS_CODE getCameraUniqueId(std::string &uniqueId);
 
+        //Grabs the unrectified raw frames.
+        TARAXL_STATUS_CODE getUnrectifiedFrame(cv::Mat &leftUnrectified, cv::Mat &rightUnrectified);
+
+        //Gets the calibration parameters fo the camera.
+        TARAXL_STATUS_CODE getCalibrationParameters(cv::Mat &R, cv::Mat &T, CalibrationParams &left, CalibrationParams &right);
+
+	//Gets the version of the camera
+        TARAXL_STATUS_CODE getSDKVersion(std::string &version);
+
     private:
 
         friend class TaraXL;
       	friend class TaraXLPoseTracking;
       	friend class TaraXLDepth;
-        int exposure;
-        double brightness;
-        cv::Mat Q;
-        ResolutionList supportedResolutions;
-        std::string friendlyName;
-        std::string busInfo;
-        Resolution selectedResolution;
-        int deviceId;
-        int counterIter;
-        TARAXL_STATUS_CODE grabFrame(cv::cuda::GpuMat &leftframe, cv::cuda::GpuMat &rightframe, bool fillDisparityMap,ACCURACY_MODE mode);
+
+        std::shared_ptr<TaraXLCamImpl> taraXLCamImpl;
+
   };
   typedef std::vector<TaraXLCam> TaraXLCamList;
 }
