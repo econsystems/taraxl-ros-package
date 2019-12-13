@@ -1,6 +1,6 @@
 #include "TaraXLRos.h"
 
-float maxDisp = 64;
+int maxDisp;
 enum accuracyMode {HIGH_FRAMERATE,HIGH_ACCURACY,ULTRA_ACCURACY};
 accuracyMode currentAccuracy = HIGH_ACCURACY;
 
@@ -54,9 +54,9 @@ void taraxlros::rosPublish ()
 	status = taraxlCam.getFriendlyName(cameraName);
 
 	if (cameraName == "See3CAM_StereoA")
-		maxDisp = 128;
+                taraxlDepth->getMaxDisparity(maxDisp);
 	else
-		maxDisp = 64;
+		taraxlDepth->getMaxDisparity(maxDisp);
 
 
 	image_transport::ImageTransport itTaraXL (nodeHandle);
@@ -65,15 +65,22 @@ void taraxlros::rosPublish ()
 	//publishers-advertise to topics
 	pubLeft = itTaraXL.advertise ("left/image_rect", 1);
 	pubRight = itTaraXL.advertise ("right/image_rect", 1);
+        pubLeftRaw=itTaraXL.advertise ("left/image_raw", 1);
+        pubRightRaw=itTaraXL.advertise ("right/image_raw", 1);
 	pubDisparity = nodeHandle.advertise<stereo_msgs::DisparityImage> ("stereo/disparity/image", 1);
 	pubDepth = itTaraXL.advertise ("depth/image", 1);
 	pubPointCloud = nodeHandle.advertise<pcl::PointCloud<pcl::PointXYZRGB>>("stereo/pointcloud", 1);
 	pubImu = nodeHandle.advertise<sensor_msgs::Imu>("imu/data_raw",1);
+        pubLeftRawCalib = nodeHandle.advertise<sensor_msgs::CameraInfo>("left/calib/raw",1);
+        pubRightRawCalib = nodeHandle.advertise<sensor_msgs::CameraInfo>("right/calib/raw",1);
+        pubLeftRectCalib = nodeHandle.advertise<sensor_msgs::CameraInfo>("left/calib/rect",1);
+        pubRightRectCalib = nodeHandle.advertise<sensor_msgs::CameraInfo>("right/calib/rect",1);
 	pubInclination = nodeHandle.advertise<geometry_msgs::Point>("imu/inclination",1);
 
 
 	image_thread = std::thread(std::bind(&taraxlros::getImages,this));
 	imu_thread = std::thread(std::bind(&taraxlros::getImu,this));
+        calib_thread = std::thread(std::bind(&taraxlros::getCalib,this));
 
 }
 
@@ -110,7 +117,7 @@ void taraxlros::disparityPublisher(stereo_msgs::DisparityImagePtr &dispMsg, Mat 
 
 	//Convert to ROS message
 	dispMsg->min_disparity = 0;
-	dispMsg->max_disparity = maxDisp;
+	dispMsg->max_disparity = taraxlDepth->getMaxDisparity(maxDisp);
 
 	dispMsg->header.stamp = ros::Time::now ();
 	dispMsg->header.frame_id = "taraxl_left";
@@ -169,17 +176,17 @@ void taraxlros::dynamicReconfCallback (taraxl_ros_package::taraxlrosConfig &conf
 				case 0:
 					status = taraxlDepth->setAccuracy (TaraXLSDK::LOW);
 	                                currentAccuracy = HIGH_FRAMERATE;
-        	                        maxDisp = 64;
+        	                        taraxlDepth->getMaxDisparity(maxDisp);
 					break;
 				case 1:
 					status = taraxlDepth->setAccuracy (TaraXLSDK::HIGH);
         	                        currentAccuracy = HIGH_ACCURACY;
-	                                maxDisp = 128;
+	                                taraxlDepth->getMaxDisparity(maxDisp);
 					break;
 				case 2:
 					status = taraxlDepth->setAccuracy (TaraXLSDK::ULTRA);
 	                                currentAccuracy = ULTRA_ACCURACY;
-        	                        maxDisp = 128;
+        	                        taraxlDepth->getMaxDisparity(maxDisp);
 					break;
 			}
 
@@ -235,17 +242,17 @@ void taraxlros::dynamicReconfCallbackSteereocam (taraxl_ros_package::steereocamr
 				case 0:
 					status = taraxlDepth->setAccuracy (TaraXLSDK::LOW);
 	                                currentAccuracy = HIGH_FRAMERATE;
-        	                        maxDisp = 64;
+        	                        taraxlDepth->getMaxDisparity(maxDisp);
 					break;
 				case 1:
 					status = taraxlDepth->setAccuracy (TaraXLSDK::HIGH);
         	                        currentAccuracy = HIGH_ACCURACY;
-	                                maxDisp = 64;
+	                                taraxlDepth->getMaxDisparity(maxDisp);
 					break;
 				case 2:
 					status = taraxlDepth->setAccuracy (TaraXLSDK::ULTRA);
 	                                currentAccuracy = ULTRA_ACCURACY;
-        	                        maxDisp = 128;
+        	                        taraxlDepth->getMaxDisparity(maxDisp);
 					break;
 
 			}
@@ -284,19 +291,31 @@ void taraxlros::dynamicReconfCallbackSteereocam (taraxl_ros_package::steereocamr
 }
 
 
+
+void taraxlros::publishImage (sensor_msgs::ImagePtr leftMsg,Mat left,std::string leftFrame,sensor_msgs::ImagePtr rightMsg,Mat right,std::string rightFrame)
+{
+                        imagePublisher (leftMsg, left, leftFrame);
+			imagePublisher (rightMsg, right, rightFrame);
+			pubLeft.publish (leftMsg);
+			pubRight.publish (rightMsg);
+
+}
+
 void taraxlros::getImages()
 {
 
 		int num = 1; // for endianness detection
 
 		//openCV Mat objects
-		Mat left, right, grayDisp, depthMap;
-
+		Mat left, right, grayDisp, depthMap,leftRaw,rightRaw;
+                
 
 		//ROS messages
 		sensor_msgs::ImagePtr leftMsg;
 		sensor_msgs::ImagePtr rightMsg;
 		sensor_msgs::ImagePtr depthMsg;
+                sensor_msgs::ImagePtr leftrawMsg;
+                sensor_msgs::ImagePtr rightrawMsg;
 		stereo_msgs::DisparityImagePtr disparityMsg = boost::make_shared<stereo_msgs::DisparityImage> ();
 
 		//Dynamic Reconfiguration
@@ -322,11 +341,13 @@ void taraxlros::getImages()
 			s->setCallback (settings2);
 		}
 
-		int dispImgSuber, depthImgSuber, leftImgSuber , rightImgSuber, pointCloudSuber;
-		dispImgSuber = depthImgSuber = leftImgSuber = rightImgSuber = pointCloudSuber = 0;
+		int dispImgSuber, depthImgSuber, leftImgSuber , rightImgSuber, pointCloudSuber,leftRawSuber,rightRawSuber;
+		dispImgSuber = depthImgSuber = leftImgSuber = rightImgSuber = pointCloudSuber = leftRawSuber = rightRawSuber= 0;
 
 		std::string leftFrame = "taraxl_left";
 		std::string rightFrame = "taraxl_right";
+                std::string leftRawFrame="taraxl_leftRaw";
+                std::string rightRawFrame="taraxl_righRaw";   
 
 		taraxl3d = new TaraXLPointcloud(taraxlCam);
 		if (taraxl3d == NULL)
@@ -349,6 +370,8 @@ void taraxlros::getImages()
 			depthImgSuber = pubDepth.getNumSubscribers ();
 			leftImgSuber = pubLeft.getNumSubscribers ();
 			rightImgSuber = pubRight.getNumSubscribers ();
+                        leftRawSuber=pubLeftRaw.getNumSubscribers ();
+                        rightRawSuber=pubRightRaw.getNumSubscribers ();
 			pointCloudSuber = pubPointCloud.getNumSubscribers();
 
 			//Obtain and publish pointcloud if subscribed
@@ -390,6 +413,7 @@ void taraxlros::getImages()
 				depthMap.convertTo (depthMap, CV_8UC1);
 				imagePublisher (depthMsg, depthMap, leftFrame);
 				pubDepth.publish (depthMsg);
+                                publishImage(leftMsg,left,leftFrame,rightMsg, right,rightFrame);
 
 			}
 
@@ -414,6 +438,7 @@ void taraxlros::getImages()
 				//Publish disparity image
 				disparityPublisher(disparityMsg, grayDisp);
 				pubDisparity.publish (disparityMsg);
+                                publishImage(leftMsg,left,leftFrame,rightMsg, right,rightFrame);
 
 			}
 
@@ -442,6 +467,7 @@ void taraxlros::getImages()
 				//Publish depth image
 				imagePublisher (depthMsg, depthMap, leftFrame);
 				pubDepth.publish(depthMsg);
+                                publishImage(leftMsg,left,leftFrame,rightMsg, right,rightFrame);
 
 			}
 
@@ -449,21 +475,37 @@ void taraxlros::getImages()
 			else if (leftImgSuber > 0 || rightImgSuber > 0)
 			{
 
-				status = taraxlDepth->getMap (left, right, grayDisp, false, depthMap, false);  //SDK function to obtain left and right image
+				status = taraxlDepth->getMap (left, right, grayDisp, false, depthMap, false); //SDK function to obtain left and right image
 
 				if (status != TARAXL_SUCCESS)
 				{
 					cout << "Failed to get left and right images" << endl;
 					exit (0);
 				}
+                                publishImage(leftMsg,left,leftFrame,rightMsg, right,rightFrame);
 
 			}
+                        //Publish left and right Unrectified image
+                        else if(leftRawSuber >0 || rightRawSuber >0)
+                        {
+                                
+                                status = taraxlCam.getUnrectifiedFrame (leftRaw,rightRaw);  //SDK function to obtain left and right Unrectified image 
 
-			//Publish left and right image
-			imagePublisher (leftMsg, left, leftFrame);
-			imagePublisher (rightMsg, right, rightFrame);
-			pubLeft.publish (leftMsg);
-			pubRight.publish (rightMsg);
+				if (status != TARAXL_SUCCESS)
+				{
+					cout << "Failed to get left and right unrectified images" << endl;
+					exit (0);
+				} 
+                               
+                                imagePublisher (leftrawMsg,leftRaw,leftRawFrame);
+                                imagePublisher(rightrawMsg,rightRaw,rightRawFrame);
+                                pubLeftRaw.publish(leftrawMsg);
+                                pubRightRaw.publish(rightrawMsg);
+                        }
+		   
+			
+                       
+                        
 
 			ros::spinOnce ();
 
@@ -489,11 +531,11 @@ void taraxlros::getImu()
 	{
 
 		status = taraxlPose->getIMUData(imuData); //SDK function to obtain imu data
-
+                //0.0174533 is used for degree to radian  conversion
 		imuMsg.angular_velocity.x =  imuData.angularVelocity[0] * 0.0174533;
 		imuMsg.angular_velocity.y =  imuData.angularVelocity[1] * 0.0174533;
 		imuMsg.angular_velocity.z =  imuData.angularVelocity[2] * 0.0174533;
-
+                //9.80665 / 1000  is used for g to m/s2  conversion
 		imuMsg.linear_acceleration.x = imuData.linearAcceleration[0] * 9.80665 / 1000;
 		imuMsg.linear_acceleration.y = imuData.linearAcceleration[1] * 9.80665 / 1000;
 		imuMsg.linear_acceleration.z = imuData.linearAcceleration[2] * 9.80665 / 1000;
@@ -516,10 +558,145 @@ void taraxlros::getImu()
 
 }
 
+
+void taraxlros::fillCalib(sensor_msgs::CameraInfo &leftCalibMsg,sensor_msgs::CameraInfo &rightCalibMsg,Mat R,Mat T,CalibrationParams left,CalibrationParams right,int width ,int height,string frameId)
+{
+        Mat qMat;
+	leftCalibMsg.distortion_model =
+            	sensor_msgs::distortion_models::PLUMB_BOB;
+                //Distortion parameters
+        leftCalibMsg.D=left.distortionMatrix;
+
+                //Intrinsic camera matrix
+	leftCalibMsg.K.fill(0);
+        leftCalibMsg.K[0]=left.cameraMatrix.at<double>(0);
+        leftCalibMsg.K[2]=left.cameraMatrix.at<double>(2);
+        leftCalibMsg.K[4]=left.cameraMatrix.at<double>(4);
+        leftCalibMsg.K[5]=left.cameraMatrix.at<double>(5);
+        leftCalibMsg.K[8]=left.cameraMatrix.at<double>(8);
+
+		//Rotation matrix
+        for(int i=0;i<9;i++)
+        {
+        	leftCalibMsg.R[i]=R.at<double>(i);
+        }
+                        //Projection/camera matrix
+        leftCalibMsg.P.fill(0.0);
+        leftCalibMsg.P[0]=left.cameraMatrix.at<double>(0);
+
+        leftCalibMsg.P[2]=left.cameraMatrix.at<double>(2);
+
+        leftCalibMsg.P[4]=left.cameraMatrix.at<double>(4);
+
+        leftCalibMsg.P[5]=left.cameraMatrix.at<double>(5);
+
+        leftCalibMsg.P[10]=1.0;
+
+        leftCalibMsg.width  =width;
+    	leftCalibMsg.height =height;
+        leftCalibMsg.header.frame_id =frameId+"Left";
+
+        status = taraxlCam.getQMatrix(qMat);
+        rightCalibMsg.distortion_model =
+            sensor_msgs::distortion_models::PLUMB_BOB;
+                        //Distortion parameters
+        rightCalibMsg.D=right.distortionMatrix;
+
+			//Intrinsic camera matrix
+	rightCalibMsg.K.fill(0);
+        rightCalibMsg.K[0]=right.cameraMatrix.at<double>(0);
+        rightCalibMsg.K[2]=right.cameraMatrix.at<double>(2);
+        rightCalibMsg.K[4]=right.cameraMatrix.at<double>(4);
+        rightCalibMsg.K[5]=right.cameraMatrix.at<double>(5);
+        rightCalibMsg.K[8]=right.cameraMatrix.at<double>(8);
+                        //Rotation matrix
+        for(int i=0;i<9;i++)
+        {
+         	rightCalibMsg.R[i]=R.at<double>(i);
+        }
+                        //Projection/camera matrix
+        rightCalibMsg.P.fill(0.0);
+        rightCalibMsg.P[3]=(-1 *right.cameraMatrix.at<double>(0) * qMat.at<double>(3,2));
+        rightCalibMsg.P[0]=right.cameraMatrix.at<double>(0);
+        rightCalibMsg.P[2]=right.cameraMatrix.at<double>(2);
+        rightCalibMsg.P[4]=right.cameraMatrix.at<double>(4);
+        rightCalibMsg.P[5]=right.cameraMatrix.at<double>(5);
+        rightCalibMsg.P[10]=1.0;
+        rightCalibMsg.width  =width;
+        rightCalibMsg.height =height;
+
+        rightCalibMsg.header.frame_id =frameId+"Right" ;
+
+}
+
+
+void taraxlros::getCalib()
+{
+
+        uint32_t seqLeftRaw=0,seqRightRaw=0,seqLeftRect=0,seqRightRect=0;
+        int leftCalibRawSuber=0,rightCalibRawSuber=0,leftCalibRectSuber=0,rightCalibRectSuber=0;
+             
+        sensor_msgs::CameraInfo leftRawCalibMsg,rightRawCalibMsg,leftRectCalibMsg,rightRectCalibMsg;
+        ROS_INFO ("TaraXL ROS for calib running");
+        Mat R,T,QMat;
+        struct CalibrationParams leftRawCalib,rightRawCalib,leftRectCalib,rightRectCalib;
+        struct Resolution Resolution;
+        status = taraxlCam.getResolution(Resolution);
+        status=taraxlCam.getCalibrationParameters(R,T,leftRawCalib,rightRawCalib,leftRectCalib,rightRectCalib);
+        fillCalib(leftRawCalibMsg,rightRawCalibMsg,R,T,leftRawCalib,rightRawCalib,Resolution.width,Resolution.height,"taraXLCalibRaw");
+        fillCalib(leftRectCalibMsg,rightRectCalibMsg,R,T,leftRectCalib,rightRectCalib,Resolution.width,Resolution.height,"taraXLCalibRect");
+
+        while(ros::ok()){
+        	leftCalibRawSuber=pubLeftRawCalib.getNumSubscribers ();
+        	rightCalibRawSuber=pubRightRawCalib.getNumSubscribers ();
+                leftCalibRectSuber=pubLeftRectCalib.getNumSubscribers ();
+        	rightCalibRectSuber=pubRightRectCalib.getNumSubscribers ();
+        	if(leftCalibRawSuber > 0)
+		{
+        	
+                	leftRawCalibMsg.header.stamp = ros::Time::now ();
+        		leftRawCalibMsg.header.seq =seqLeftRaw ;
+        		pubLeftRawCalib.publish(leftRawCalibMsg);//Publish left Camera information(calibration parameter for left raw image)
+        		seqLeftRaw++;	
+        	}
+        	if( rightCalibRawSuber>0)
+        	{
+         		
+               		rightRawCalibMsg.header.stamp = ros::Time::now ();
+        		rightRawCalibMsg.header.seq =seqRightRaw ;
+        		pubRightRawCalib.publish(rightRawCalibMsg);//Publish right camera information(calibration parameter for right raw image)
+        		seqRightRaw++;
+        	     
+        	}
+                if(leftCalibRectSuber > 0)
+		{
+        	
+                	leftRectCalibMsg.header.stamp = ros::Time::now ();
+        		leftRectCalibMsg.header.seq =seqLeftRect;
+        		pubLeftRectCalib.publish(leftRectCalibMsg);//Publish left Camera information(calibration parameter for left rectifide image)
+        		seqLeftRect++;	
+        	}
+        	if( rightCalibRectSuber>0)
+        	{
+         		
+               		rightRectCalibMsg.header.stamp = ros::Time::now ();
+        		rightRectCalibMsg.header.seq =seqRightRect ;
+        		pubRightRectCalib.publish(rightRectCalibMsg);//Publish right camera information(calibration parameter for right rectifide image)
+        		seqRightRect++;
+
+        	}
+              
+	}
+       
+	
+             
+}
+
 taraxlros::~taraxlros ()
 {
 	image_thread.join();
 	imu_thread.join();
+        calib_thread.join();
 	delete taraxlDepth;
 	delete taraxl3d;
 	taraxlCam.disconnect();

@@ -26,6 +26,24 @@
   </rosparam>
 </group>
 
+<group ns="taraxl/left/image_raw" >
+  <rosparam param="disable_pub_plugins">
+    - 'image_transport/compressedDepth'
+    - 'image_transport/theora'
+    - 'image_transport/compressed'
+  </rosparam>
+</group>
+
+<group ns="taraxl/right/image_raw" >
+  <rosparam param="disable_pub_plugins">
+    - 'image_transport/compressed'
+    - 'image_transport/compressedDepth'
+    - 'image_transport/theora'
+   
+  </rosparam>
+</group>
+
+
 <node name="camera_transform" pkg="tf" type="static_transform_publisher" args="0 0 0 -1.57 0 -1.57 /map /taraxl 100" />
 
 

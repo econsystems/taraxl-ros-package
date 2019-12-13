@@ -32,6 +32,15 @@ namespace TaraXLSDK
     //Sets the accuracy for the disparity images.
     TARAXL_STATUS_CODE setAccuracy(ACCURACY_MODE mode);
 
+    //Gets the minimum disparity value that is taken for stereo matching.
+    TARAXL_STATUS_CODE getMinDisparity(int &minDisparity);
+
+    //Gets the maximum disparity value that is taken for stereo matching.
+    TARAXL_STATUS_CODE getMaxDisparity(int &maxDisparity);
+
+    //Sets the depth range for the selected camera.
+    TARAXL_STATUS_CODE setDepthRange(TARAXL_DEPTH_RANGE depthRange);
+
     //Gets the disparity and depth maps.
     TARAXL_STATUS_CODE getMap(cv::Mat &leftImage, cv::Mat &rightImage, cv::Mat &disparityMap, bool fillDisparityMap, cv::Mat &depthMap, bool fillDepthMap, TARAXL_FILTER_TYPE filter=TARAXL_DEFAULT_FILTER);
 

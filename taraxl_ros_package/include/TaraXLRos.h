@@ -24,6 +24,8 @@
 #include <std_msgs/Bool.h>
 
 
+
+#include <sensor_msgs/distortion_models.h>
 //Point cloud headers
 #include <pcl_ros/point_cloud.h>
 #include <pcl_conversions/pcl_conversions.h>
@@ -58,27 +60,36 @@ class taraxlros
 		//publishers
 		image_transport::Publisher pubLeft;
 		image_transport::Publisher pubRight;
+                image_transport::Publisher pubLeftRaw;
+                image_transport::Publisher pubRightRaw;
 		ros::Publisher pubDisparity;
 		image_transport::Publisher pubDepth;
-
+                
 		ros::Publisher pubPointCloud;
 		ros::Publisher pubImu;
 		ros::Publisher pubInclination;
-
+                ros::Publisher pubLeftRawCalib;
+                ros::Publisher pubRightRawCalib;
+		ros::Publisher pubLeftRectCalib;
+                ros::Publisher pubRightRectCalib;
+           
 	public:
 
 		void dynamicReconfCallback (taraxl_ros_package::taraxlrosConfig &config, uint32_t level);
 		void dynamicReconfCallbackSteereocam (taraxl_ros_package::steereocamrosConfig &config, uint32_t level);
-
+                void publishImage (sensor_msgs::ImagePtr leftMsg,Mat left,std::string leftFrame,sensor_msgs::ImagePtr rightMsg,Mat right,std::string rightFrame);
 		void rosPublish ();
 		void imagePublisher(sensor_msgs::ImagePtr &imageMsg, Mat image,std::string frame);
 		void disparityPublisher(stereo_msgs::DisparityImagePtr &dispMsg, Mat dispImage);
+                void fillCalib(sensor_msgs::CameraInfo &leftMsg,sensor_msgs::CameraInfo &rightMsg,Mat R,Mat T,CalibrationParams left,CalibrationParams right,int width ,int height,string frameId);
 
 		void getImu();
+                void getCalib();
 		void getImages();
 
 		std::thread image_thread;
 		std::thread imu_thread;
+                std::thread calib_thread;
 
 
 		~taraxlros ();

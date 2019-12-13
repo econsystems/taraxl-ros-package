@@ -5,7 +5,7 @@ The TaraXL - See3CAM_StereoA is a UVC compliant USB 3.0 SuperSpeed Stereo vision
 For More Information please visit:
 https://www.e-consystems.com/3d-usb-stereo-camera-with-nvidia-accelerated-sdk.asp
 
-STEEReoCAM™ is a 2MP 3D MIPI Stereo camera for NVIDIA® Jetson AGX Xavier™/TX2 developer kit with improved accuracy and depth range. This MIPI Stereo camera is based on 1/2.9" OV2311 global shutter CMOS sensor from OmniVision. STEEReoCAM™ is bundled with a proprietary CUDA® accelerated Stereo SDK that runs on the GPU of NVIDIA® Tegra processors. It provides 3D depth mapping at ((2*1600) x 1300) resolution at 22 fps. 
+STEEReoCAM™ is a 2MP 3D MIPI Stereo camera for NVIDIA® Jetson AGX Xavier™/TX2/Nano developer kit with improved accuracy and depth range. This MIPI Stereo camera is based on 1/2.9" OV2311 global shutter CMOS sensor from OmniVision. STEEReoCAM™ is bundled with a proprietary CUDA® accelerated Stereo SDK that runs on the GPU of NVIDIA® Tegra processors. It provides 3D depth mapping at ((2*1600) x 1300) resolution at 22 fps. 
 
 For More Information please visit:
 https://www.e-consystems.com/nvidia-cameras/jetson-agx-xavier-cameras/stereo-camera.asp
@@ -13,13 +13,12 @@ https://www.e-consystems.com/nvidia-cameras/jetson-agx-xavier-cameras/stereo-cam
 ## Getting started
 
 1. Download the latest version of the TaraXL SDK at https://developer.e-consystems.com
-2. Install the TaraXL SDK on your NVIDIA TX2/Xavier device or in Linux x86 PC(with NVIDIA Card).
+2. Install the TaraXL SDK on your NVIDIA TX2/Xavier/Nano device or in Linux x86 PC(with NVIDIA Card).
 
 ## Prerequisites
 
-- Ubuntu 16.04/18.04
-- [TARAXL SDK 3.1.1](https://developer.e-consystems.com) and its dependency [CUDA](https://developer.nvidia.com/cuda-downloads)
-- [ROS Kinetic](http://wiki.ros.org/kinetic/Installation/Ubuntu)
+- Ubuntu 18.04
+- [TARAXL SDK 3.2.2](https://developer.e-consystems.com) and its dependency [CUDA](https://developer.nvidia.com/cuda-downloads)
 - [ROS Melodic](http://wiki.ros.org/melodic/Installation/Ubuntu)
 
 ## Build the program
@@ -50,11 +49,17 @@ http://wiki.ros.org/taraxl-ros-package
 
     /taraxl/left/image_rect - Rectified left image
     /taraxl/right/image_rect - Rectified right image
+    /taraxl/left/image_raw - Unrectified left image
+    /taraxl/right/image_raw - Unrectified right image 
     /taraxl/stereo/disparity/image - Disparity image
     /taraxl/depth/image - Depth image 
     /taraxl/stereo/pointcloud - pointcloud
     /taraxl/imu/data_raw - Raw IMU data - linear acceleration and angular velocity
-    /taraxl/imu/inclination - IMU inclination data w.r.t 3 axes x,y and z 
+    /taraxl/imu/inclination - IMU inclination data w.r.t 3 axes x,y and z
+    /taraxl/left/calib/raw - Calibration informations for unrectified left image
+    /taraxl/right/calib/raw - Calibration informations for unrectified right image
+    /taraxl/left/calib/rect - Calibration informations for rectified left image
+    /taraxl/right/calib/rect - Calibration informations for rectified right image
 
 ## Dynamic Reconfiguration Settings for TaraXL
 
@@ -96,6 +101,16 @@ To view imu data
 	rostopic echo /taraxl/imu/data_raw
 	rostopic echo /taraxl/imu/inclination
 
+To view calibration parameters for unrectified Frames
+
+	rostopic echo /taraxl/left/calib/raw 
+	rostopic echo /taraxl/right/calib/raw 
+
+To view calibration parameters for rectified Frames
+
+	rostopic echo /taraxl/left/calib/rect
+	rostopic echo /taraxl/right/calib/rect 
+	       
 Dynamic reconfiguration
 
 	rosrun rqt_reconfigure rqt_reconfigure

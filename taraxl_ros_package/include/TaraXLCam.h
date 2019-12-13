@@ -25,7 +25,7 @@ TaraXLCam.h :  TaraXLCam.h contains APIs about
 #include <vector>
 #include "opencv2/core/core.hpp"
 #include <memory>
-#define TARAXL_SDK_VERSION "3.1.1"
+#define TARAXL_SDK_VERSION "3.2.2"
 
 namespace TaraXLSDK
 {
@@ -37,6 +37,12 @@ namespace TaraXLSDK
   struct CalibrationParams
   {
       cv::Mat cameraMatrix;
+      double apertureWidth;
+      double apertureHeight;
+      double fovX;
+      double fovY;
+      double focalLength;	
+      cv::Mat rectifiedCameraMatrix;
       cv::Mat distortionMatrix;
   };
   typedef std::vector<Resolution> ResolutionList;
@@ -61,6 +67,9 @@ namespace TaraXLSDK
 
         //Sets the resolution to the connected camera
         TARAXL_STATUS_CODE setResolution(Resolution &resolution);
+
+        //Gets the current resolution to the connected camera
+        TARAXL_STATUS_CODE getResolution(Resolution &resolution);
 
         //Sets the exposure of the connected camera
         TARAXL_STATUS_CODE setExposure(int exposureVal);
@@ -96,7 +105,7 @@ namespace TaraXLSDK
         TARAXL_STATUS_CODE getUnrectifiedFrame(cv::Mat &leftUnrectified, cv::Mat &rightUnrectified);
 
         //Gets the calibration parameters fo the camera.
-        TARAXL_STATUS_CODE getCalibrationParameters(cv::Mat &R, cv::Mat &T, CalibrationParams &left, CalibrationParams &right);
+        TARAXL_STATUS_CODE getCalibrationParameters(cv::Mat &R, cv::Mat &T, CalibrationParams &left, CalibrationParams &right,CalibrationParams &leftRectified, CalibrationParams &rightRectified);
 
 	//Gets the version of the camera
         TARAXL_STATUS_CODE getSDKVersion(std::string &version);
@@ -104,6 +113,7 @@ namespace TaraXLSDK
     private:
 
         friend class TaraXL;
+	friend class TaraXLPointcloud;
       	friend class TaraXLPoseTracking;
       	friend class TaraXLDepth;
 
